@@ -4,28 +4,28 @@
 
 ## 📂 Repository Structure
 
-smart-access-indicator/
-├── app/                   # Core application modules
-│   ├── __init__.py
+alpr-gate-pi-data/
+├── app/    
+│   ├── init.py
 │   ├── access.py
 │   ├── arduino_led.py
 │   ├── capture.py
 │   ├── db.py
 │   ├── detect.py
-│   ├── gpio_out.py
-│   ├── main.py
-│   └── ocr.py
-├── config/                # Configuration files
-│   └── whitelist.yaml
-├── data/                  # Runtime database & logs
+│   ├── gpio_out.py   
+│   ├── main.py             
+│   └── ocr.py       
+├── config          
+│   └── whitelist.yaml 
+├── data         
 │   └── access.db
-├── models/                # Trained and exported models
-│   ├── yolov8n.pt
-│   └── yolov8n.torchscript
-├── quick_test.py          # Standalone demo script
-├── requirements.txt       # Python dependencies
-├── Dockerfile             # ARM64 container definition
-└── README.md              # Project overview & instructions 
+├── Dockerfile  
+├── models         
+│   └── yolov8n.pt
+├── quick_test.py  
+├── requriments.txt        
+├── yolov8n.torchscript       
+└── README.md     
 
 
 ## 🚀 Quickstart
