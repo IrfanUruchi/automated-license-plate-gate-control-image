@@ -4,7 +4,7 @@
 
 ## 📂 Repository Structure
 
-alpr-gate-pi-data/
+smart-access-indicator/
 ├── app/    
 │   ├── init.py
 │   ├── access.py
