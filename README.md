@@ -2,96 +2,100 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24434566.svg)](https://doi.org/10.5281/zenodo.24434566)
 
-A CPU-based automatic license plate recognition (ALPR) system for
-on-premises vehicle access control using Raspberry Pi and Arduino.
+A CPU-based automatic license plate recognition (ALPR) system for on-premises vehicle access control using Raspberry Pi and Arduino.
 
 **Author:** Irfan Uruchi  
 **Institution:** South East European University  
 **Original project:** May 2025  
-**Research publication:** November 22, 2026  
+**Preprint publication:** November 22, 2026  
 **ORCID:** [0009-0000-9036-8172](https://orcid.org/0009-0000-9036-8172)
 
 ---
 
 ## Overview
 
-This project implements an embedded vehicle access-control system
-combining YOLOv8n vehicle detection, EasyOCR text recognition,
-local authorization, serial communication, and persistent event logging.
+This project implements a local vehicle access-control system using computer vision, optical character recognition, and embedded hardware.
 
-The Raspberry Pi handles image acquisition, inference, recognition,
-and access decisions. An Arduino UNO R3 provides physical access-state
-indications through USB serial communication.
+A Raspberry Pi 4B performs vehicle detection using YOLOv8n, extracts registration information using EasyOCR, and determines access authorization against a local whitelist. An Arduino UNO R3 receives access decisions through USB serial communication, while SQLite maintains persistent event records.
 
-The recognition pipeline operates locally using CPU inference,
-without requiring a dedicated GPU or cloud-based recognition service.
+The recognition pipeline operates entirely on the CPU, without requiring a dedicated GPU or cloud-based recognition service.
 
 ## System Architecture
 
-The recognition and authorization pipeline follows this sequence:
-
 ```text
-Camera Input
-     |
-YOLOv8n Vehicle Detection
-     |
-Vehicle Region Extraction
-     |
-EasyOCR Text Recognition
-     |
-License Plate Authorization
-     |
-     +--- Arduino / Access-State Indication
-     |
-     +--- SQLite Event Logging
+Camera
+  │
+  ▼
+Raspberry Pi 4B
+  │
+  ├── Image acquisition
+  ├── YOLOv8n vehicle detection
+  ├── Vehicle region extraction
+  ├── EasyOCR text recognition
+  └── Authorization decision
+        │
+        ├── USB Serial ──► Arduino UNO R3
+        │                   └── Access-state indication
+        │
+        └── SQLite ──────► Persistent event records
 ```
 
-Authorized registration numbers are maintained in a local YAML
-configuration file.
+The current implementation applies optical character recognition to detected vehicle regions rather than employing a separate license plate localization model.
 
-## Main Components
+## Hardware and Software
 
 | Component | Technology |
 |---|---|
 | Edge computing | Raspberry Pi 4B |
-| Embedded control | Arduino UNO R3 |
+| Microcontroller | Arduino UNO R3 |
 | Vehicle detection | YOLOv8n |
-| Text recognition | EasyOCR |
+| Optical character recognition | EasyOCR |
+| Inference runtime | PyTorch / TorchScript |
 | Authorization | YAML |
-| Event storage | SQLite |
+| Database | SQLite |
 | Hardware communication | USB serial |
 | Deployment | Docker |
-| Programming languages | Python, C++ |
+| Languages | Python, C++ |
 
 ## Repository Structure
 
 ```text
-app/
-├── access.py
-├── arduino_led.py
-├── capture.py
-├── db.py
-├── detect.py
-├── gpio_out.py
-├── main.py
-└── ocr.py
-
-config/
-└── whitelist.yaml
-
-data/
-└── access.db
-
-models/
-└── yolov8n.pt
-
-Dockerfile
-quick_test.py
-README.md
+automated-license-plate-gate-control-image/
+├── smart-access-indicator/
+│   ├── app/
+│   │   ├── access.py
+│   │   ├── arduino_led.py
+│   │   ├── capture.py
+│   │   ├── db.py
+│   │   ├── detect.py
+│   │   ├── gpio_out.py
+│   │   ├── main.py
+│   │   └── ocr.py
+│   ├── config/
+│   │   └── whitelist.yaml
+│   ├── data/
+│   │   └── access.db
+│   ├── models/
+│   │   └── yolov8n.pt
+│   ├── Dockerfile
+│   ├── quick_test.py
+│   ├── requirements.txt
+│   └── yolov8n.torchscript
+└── README.md
 ```
 
-The repository contains the application modules, configuration files,
-model assets, inference utility, and Docker deployment configuration.
+### Application Modules
+
+| Module | Responsibility |
+|---|---|
+| `access.py` | Registration authorization |
+| `arduino_led.py` | Arduino serial communication |
+| `capture.py` | Camera input and frame acquisition |
+| `db.py` | SQLite event storage |
+| `detect.py` | Vehicle detection |
+| `gpio_out.py` | GPIO output handling |
+| `main.py` | Application entry point |
+| `ocr.py` | Optical character recognition |
 
 ## Installation
 
@@ -99,54 +103,52 @@ model assets, inference utility, and Docker deployment configuration.
 
 - Raspberry Pi OS (64-bit)
 - Python 3.11 for native execution
-- Docker for containerized deployment
+- Docker for containerized execution
 - Compatible USB or network camera
-- Arduino UNO R3 for serial-based access-state indication
-- Git LFS for retrieving model assets where applicable
+- Arduino UNO R3 for serial-based hardware control
+- Git LFS where required for model assets
 
 ### Native Installation
 
-Clone the repository:
+Clone the repository and enter the application directory:
 
 ```bash
-git clone https://github.com/IrfanUruchi/automated-license-plate-gate-control.git
-cd automated-license-plate-gate-control
+git clone https://github.com/IrfanUruchi/automated-license-plate-gate-control-image.git
+cd automated-license-plate-gate-control-image/smart-access-indicator
 ```
 
-Create a Python virtual environment:
+Create the Python environment and install dependencies:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+
 python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Install the dependencies using the repository's requirements file.
-
-Retrieve model assets managed through Git LFS:
+Retrieve any model assets stored through Git LFS:
 
 ```bash
 git lfs install
 git lfs pull
 ```
 
-Configure the camera source, authorization file, and hardware
-communication settings before launching the application entry point
-in `app/main.py`.
+Configure the camera source, authorization list, and hardware communication settings before running the application through its entry point, `app/main.py`.
 
 ## Docker Deployment
 
-The container image is available on Docker Hub:
+The prebuilt container image is available on Docker Hub:
 
 [irfanuruchi/alpr-gate-pi](https://hub.docker.com/r/irfanuruchi/alpr-gate-pi)
 
-Select an available image tag from Docker Hub.
+Select an available image tag:
 
 ```bash
 docker pull irfanuruchi/alpr-gate-pi:<tag>
 ```
 
-Example deployment using a locally connected USB camera:
+Run the following example from the `smart-access-indicator/` directory for a locally connected USB camera:
 
 ```bash
 docker run -d \
@@ -157,97 +159,79 @@ docker run -d \
   irfanuruchi/alpr-gate-pi:<tag>
 ```
 
-Replace `<tag>` with the selected image tag.
+Replace `<tag>` with the appropriate published image tag.
 
-Arduino serial devices must also be exposed to the container
-when serial-based hardware control is enabled.
+Serial-based Arduino control requires the corresponding host serial device to be exposed to the container.
 
-Network camera deployments require the corresponding camera
-source configuration.
+For network cameras, configure the appropriate camera endpoint in the application.
 
 ## Configuration
 
-The local authorization list is stored in:
+Application configuration and runtime assets are located within `smart-access-indicator/`.
 
-```text
-config/whitelist.yaml
-```
+| Path | Purpose |
+|---|---|
+| `config/whitelist.yaml` | Authorized vehicle registrations |
+| `data/access.db` | Persistent access-event database |
+| `models/yolov8n.pt` | PyTorch detection weights |
+| `yolov8n.torchscript` | TorchScript detection model |
 
-Configure the authorized registration numbers before starting
-the application.
+Network cameras should use stable IP addresses or DHCP reservations.
 
-For network cameras, static IP addresses or DHCP reservations
-are recommended to maintain a consistent camera endpoint.
+Real vehicle registrations, production authorization lists, and operational access records should not be committed to public version control.
 
-Production authorization lists, captured registration numbers,
-and operational access logs should remain outside public
-version control.
+## Evaluation
 
-## Model Assets
+The `quick_test.py` utility provides single-image inference for inspecting recognition output.
 
-The recognition pipeline uses YOLOv8n for vehicle detection
-and EasyOCR for text recognition.
+The research manuscript documents the implemented single-lane prototype, including:
 
-The repository includes PyTorch model weights and a TorchScript
-export for the detection stage.
+- CPU-based vehicle detection and text recognition.
+- Local authorization and access decisions.
+- Raspberry Pi and Arduino integration.
+- Processing latency.
+- Persistent SQLite event logging.
 
-The current implementation performs OCR on detected vehicle
-regions rather than using a dedicated license plate detector.
+Individual detector inference times observed during the prototype demonstration ranged from approximately 0.828 to 0.948 seconds. These measurements represent detector inference time rather than complete end-to-end access-decision latency.
 
-## Testing and Evaluation
-
-The `quick_test.py` utility provides a single-image inference
-test for inspecting recognition output.
-
-The associated research manuscript documents the physical
-prototype, recognition pipeline, hardware integration,
-processing latency, and event logging.
-
-Individual detector inference times observed during the
-prototype demonstration ranged from approximately
-0.828 to 0.948 seconds.
-
-These measurements represent detector inference rather than
-complete end-to-end access-decision latency.
+The manuscript discusses the experimental results, evaluation methodology, implementation limitations, and potential extensions to the system.
 
 ## Research Publication
 
-**CPU-Based Automatic License Plate Recognition for On-Premises
-Access Control Using Raspberry Pi and Arduino**
+### CPU-Based Automatic License Plate Recognition for On-Premises Access Control Using Raspberry Pi and Arduino
 
-The research manuscript describes the system architecture,
-implementation, experimental observations, hardware integration,
-limitations, and future development directions.
+| Publication details | |
+|---|---|
+| Author | Irfan Uruchi |
+| Publication type | Preprint |
+| Publication date | November 22, 2026 |
+| Publisher | Zenodo |
+| License | CC BY 4.0 |
+| DOI | [10.5281/zenodo.24434566](https://doi.org/10.5281/zenodo.24434566) |
 
-- Author: Irfan Uruchi
-- Publication date: November 22, 2026
-- Publication type: Preprint
-- Repository: Zenodo
-- DOI: [10.5281/zenodo.24434566](https://doi.org/10.5281/zenodo.24434566)
+The paper presents the system architecture, recognition pipeline, hardware implementation, experimental observations, and future research directions.
 
 [Read the full research paper](https://doi.org/10.5281/zenodo.24434566)
 
 ## Citation
 
-If you use this research or its implementation, please cite
-the associated preprint:
+If you use this research or its implementation, please cite the associated preprint.
 
-Uruchi, I. (2026). *CPU-Based Automatic License Plate Recognition
-for On-Premises Access Control Using Raspberry Pi and Arduino*.
-Zenodo. https://doi.org/10.5281/zenodo.24434566
+Uruchi, I. (2026). *CPU-Based Automatic License Plate Recognition for On-Premises Access Control Using Raspberry Pi and Arduino*. Zenodo. https://doi.org/10.5281/zenodo.24434566
+
+### BibTeX
 
 ```bibtex
 @misc{uruchi2026alpr,
-  author       = {Uruchi, Irfan},
-  title        = {CPU-Based Automatic License Plate Recognition
-                  for On-Premises Access Control Using
-                  Raspberry Pi and Arduino},
-  year         = {2026},
-  month        = {nov},
-  publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.24434566},
-  url          = {https://doi.org/10.5281/zenodo.24434566},
-  note         = {Preprint}
+  author    = {Uruchi, Irfan},
+  title     = {CPU-Based Automatic License Plate Recognition for
+               On-Premises Access Control Using Raspberry Pi and Arduino},
+  year      = {2026},
+  month     = nov,
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.24434566},
+  url       = {https://doi.org/10.5281/zenodo.24434566},
+  note      = {Preprint}
 }
 ```
 
@@ -257,17 +241,15 @@ Machine-readable citation metadata is provided in `CITATION.cff`.
 
 The original project source code is released under the MIT License.
 
-The research manuscript is distributed under the Creative Commons
-Attribution 4.0 International (CC BY 4.0) license.
+The research manuscript is distributed under the Creative Commons Attribution 4.0 International (CC BY 4.0) license.
 
-Third-party models and dependencies remain subject to their
-respective licenses.
+Third-party models and dependencies remain subject to their respective licenses.
 
 ## Author
 
 **Irfan Uruchi**  
 Computer Engineer
 
-[GitHub](https://github.com/IrfanUruchi) |
-[ORCID](https://orcid.org/0009-0000-9036-8172) |
+[GitHub](https://github.com/IrfanUruchi) ·
+[ORCID](https://orcid.org/0009-0000-9036-8172) ·
 [Research Publication](https://doi.org/10.5281/zenodo.24434566)
